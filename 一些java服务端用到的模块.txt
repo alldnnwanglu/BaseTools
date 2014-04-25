@@ -1,0 +1,25 @@
+==========================================
+【日志模块  log】 
+1.java 中一般使用 log4j.jar & 
+eg:  private static final Log log = LogFactory.getLog( xx.class);
+	需要搭配 一张 配置log4j 的配置表 <==>  log4j.properties
+	a.可配置过滤事项：
+	b.可配置显示模式：
+eg:
+	# DROP
+	log4j.logger.DROP=INFO, drop
+	log4j.appender.drop=org.apache.log4j.DailyRollingFileAppender
+	log4j.appender.drop.file=logs/drop.log
+	log4j.appender.drop.DatePattern='.'yyyyMMdd
+	log4j.appender.drop.layout=org.apache.log4j.PatternLayout
+	log4j.appender.drop.layout.ConversionPattern=%m%n
+	log4j.appender.drop.Threshold=INFO
+	log4j.appender.drop.ImmediateFlush=false
+	log4j.appender.drop.BufferedIO=true   
+	log4j.appender.drop.BufferSize=8192
+
+2.
+==========================================
+【服务端 使用 Mina || Netty】
+1.Mina 性能没有 Netty 性能好
+	/Mina_Demo
