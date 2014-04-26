@@ -2,6 +2,11 @@
 * 网络层 消息解析
 * @author rodking
 */
+public enum DecoderState
+{
+  WAITING_DATA, 
+  READY;
+}
 
 public class RequestDecoder extends CumulativeProtocolDecoder
 {
@@ -15,36 +20,106 @@ public class RequestDecoder extends CumulativeProtocolDecoder
 	
 	protected boolean doDecode(IoSession session,IoBuffer input,ProtocolDecoderOutPut out)throws Exce[tion
 	{
-		CodeContext ctx = (CodeContext)session.getAttribute(SessionType.CONTEXT_KEY);
-		if((ctx!=null)&&(ctx.isSamState(DecoderState.WAITING_DATA))
+		// ...省略 部分代码
+		while(true)
 		{
+			if(input.remaining < 8) return false;
+			input.mark();
+			if(input.getInt() == -1860168940) break;
+			
+			input.reset();
+			input.get();
+		}
+		
+		int len = input.getInt();
+		if((len <= 0)||(len >= 65536)) return true;
+		
+		if(input.remaining() < len)
+		{
+			return false;
+		}
+		byte[] buffer = new byte[len];
+		Request request = decodeBuffer(buffer,session);
+		if(request != null)
+			out.write(request);
+			
+		return true;
+	}
+	
+	// 解析 数据流 
+	public Request decodeBuffer(byte[] buffer,IoSession session)
+	{
+		if(buffer ==null) return null;
+		int bufferSize = buffer.length;
+		if(buffer <20) return null;
+		
+		int skipBytes = 12;
+		DataInputStream dataInputStream = null;
+		ByteArrayInputStream byteArrayInputStream = null;
+		byte[] authData = Arrays.copyOfRange(buffer,12,bufferSize);
+		
+		try
+		{
+			byteArrayInputStream = new ByteArrayInputStream(buffer);
+			dataInputStream =new DataInputStream(byteArrayInputStream);
+			
+			// 解析数据包
+			int sn = dataInputStream.readInt();
+			int messageType = dataInputStream.readInt();
+			int authCode = dataInputStream.readInt();
+			int module = dataInputStream.readInt();
+			int cmd = dataInputStream.readInt();
+			int calcAuthCode = HashAlgorithms.fnvHash(authData);
+			
+			// 不是身份验证
+			if(authCode != calcAuthCode)
 			{
-				if(input.remaining() < ctx.getByteNeeded()) return false;
+				session.write(Response.valueOf(sn,module,cmd,messageType,4);
+				// 防火墙相关代码 略...
+				return null;
 			}
-		
-			byte[] buffer = new byte[ctx.getByteNeeded()];
-			input.get(buffer);
-		
-			Request request = decodeBuffer(bufer,session);
-			if(request!=null)
+			
+			Request request = Request.valueOf(sn,module,cmd,messageType);
+			byte[] byteArray;
+			if(bufferSize > 20)
 			{
-				out.write(request);
+				byteArray = new byte[bufferSize - 20];
+				dataInputStream.read(byteArray);
+				// 解析为游戏中的逻辑对象
+				Object value = transferObject(module,cmd,messageType,byteArray);
+				
+				if(value == null)
+				{
+					session.write(Response.valueOf(sn,module,cmd,messageType,2);
+					return null;
+				}
+				
+				request.setValue(value);
 			}
-		
-			ctx.setState(DecoderState.READY);
-			session.removeAttribute(SessionType.CONTEXT_KEY);
-			return true;
+			return requset;
 		}
-		Boolean firstRequest = (Boolean)session.getAttribute(SessionType.FIRST_REQUEST_KEY);
-		if(firstRequest == null)
+		catch(Exception ex)
 		{
-			firstRequest = Boolean.valueOf(true);
-			session.setAttribute(SessionType.FIRST_REQUEST_KEY,firstRequest);
+			
 		}
-		
-		if(firstRequest.booleanValue())
+		finally
 		{
-		
+			// 关闭流 简写 取消 各种异常验证
+			if(dataInputStream !=null) dataInputStream.close();
+			if(byteArrayStream !=null) byteArrayStream.close();
+			dataInputStream = null;
+			byteArrayStream = null;
 		}
+		
+	}
+	
+	/// 传输对象
+	protected Object transferObject(int module,int cmd,int messageType,byte[] array)
+	{
+		if(messageType == MessageType.AMF3.ordinal())
+			return ObjectConvert.byteArray2ASObject(array);
+		if(messageType == MessageType.JAVA.ordinal())
+			return ObjectConvert.byteArray2Object(array);
+		return null;
 	}
 }

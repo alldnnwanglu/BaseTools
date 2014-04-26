@@ -1,5 +1,5 @@
 /*
-* ÍøÂç²ã ÇëÇó
+* ÍøÂç ²ãÇëÇó
 * @author rodking
 */
 public class Request extends Message implements Serializable

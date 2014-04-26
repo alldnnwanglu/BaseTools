@@ -14,8 +14,11 @@ public class BootMinaStart
 		
 		// 通讯监控器
 		IoHandler ioHandler = new MyServerHandler();
+		
+		// 各种攻击过滤模块 省略...
+		// IoFilter cmdFilter = new CmdAttackFilter();
 		// 字节攻击过滤
-		IoFilter byteFilter = new ByteAttackFilter();
+		// IoFilter byteFilter = new ByteAttackFilter();
 		
 		final SocketServer socketServer = new SocketServer(protocolCodecFactory,ioHandler,byteFilter,cmdFilter);
 		
