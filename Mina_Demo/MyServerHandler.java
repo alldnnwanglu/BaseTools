@@ -5,12 +5,11 @@
 
 public class MyServerHandler implements IoHandler
 {
-	@Autowired
-	private IoHandler ioHandler;
+	private IoHandler ioHandler ;
 	
 	public MyServerHandler()
 	{
-		ioHandler = new IoHandler();
+		ioHandler = new ServerHandler();
 	}
 	
 	@Override
